@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 const apiKey =
@@ -43,6 +43,7 @@ const errorHandlers = {
 export default function Cars() {
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [firstLoad, setFirstLoad] = useState(true);
   const [inputs, setInputs] = useState(defaultValues);
   const [errors, setErrors] = useState(defaultErrors);
 
@@ -74,7 +75,6 @@ export default function Cars() {
   };
 
   const handleFetch = async () => {
-    setLoading(true);
     try {
       const res = await fetch(url, {
         headers,
@@ -88,9 +88,13 @@ export default function Cars() {
       console.error("Hubo un error consultando la base de datos: ", err);
       toast.error("Hubo un error consultando los autos");
     } finally {
-      setLoading(false);
+      setFirstLoad(false);
     }
   };
+
+  useEffect(() => {
+    handleFetch();
+  }, []);
 
   const checkAllErrors = () =>
     Object.values(errors).some((e) => Boolean(e)) ||
@@ -127,7 +131,6 @@ export default function Cars() {
 
     if (checkAllErrors()) {
       setLoading(false);
-
       return toast.error("Hay errores en el formulario");
     }
 
@@ -157,25 +160,17 @@ export default function Cars() {
     }
   };
 
-  const handleClick = () => {
-    handleFetch();
-  };
-
   return (
     <>
-      <button onClick={handleClick} disabled={loading}>
-        {loading ? "loading..." : "Fetch!"}
-      </button>
-
       <form>
         <fieldset>
-          <legend>New car</legend>
+          <legend>Nuevo auto</legend>
           <input
             value={inputs.name}
             onChange={handleInputs}
             required
             name="name"
-            placeholder="Name"
+            placeholder="Nombre"
           />
           <span>{errors.name || ""}</span>
           <input
@@ -183,7 +178,7 @@ export default function Cars() {
             onChange={handleInputs}
             name="model"
             required
-            placeholder="Model"
+            placeholder="Modelo"
           />
           <span>{errors.model || ""}</span>
           <input
@@ -191,33 +186,41 @@ export default function Cars() {
             onChange={handleInputs}
             name="price"
             required
-            placeholder="Price"
+            placeholder="Precio"
           />
           <span>{errors.price || ""}</span>
         </fieldset>
-        <input type="submit" onClick={postCar} disabled={loading} value="Add" />
+        <input
+          type="submit"
+          onClick={postCar}
+          disabled={loading}
+          value={loading ? "Espere..." : "Agregar"}
+        />
       </form>
-
-      <table>
-        <thead>
-          <tr>
-            <th>id</th>
-            <th>Nombre</th>
-            <th>Modelo</th>
-            <th>Precio</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cars.map((e) => (
-            <tr key={e.id}>
-              <td>{e.id}</td>
-              <td>{e.Nombre}</td>
-              <td>{e.Modelo}</td>
-              <td>{e.Precio}</td>
+      {firstLoad ? (
+        <h3>Cargando...</h3>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>id</th>
+              <th>Nombre</th>
+              <th>Modelo</th>
+              <th>Precio</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {cars.map((e) => (
+              <tr key={e.id}>
+                <td>{e.id}</td>
+                <td>{e.Nombre}</td>
+                <td>{e.Modelo}</td>
+                <td>{e.Precio}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </>
   );
 }
